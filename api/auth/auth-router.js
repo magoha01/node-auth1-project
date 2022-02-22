@@ -6,8 +6,9 @@ const bcrypt = require("bcryptjs");
 const { add, findBy } = require("../users/users-model");
 const {
   checkUsernameFree,
-  checkUsernameExists,
+  checkUsernameExists, 
   checkPasswordLength,
+  restricted
 } = require("../auth/auth-middleware");
 
 /**
@@ -36,7 +37,6 @@ const {
 router.post(
   "/register",
   checkUsernameFree,
-  checkUsernameExists,
   checkPasswordLength,
   async (req, res, next) => {
     try {
@@ -70,9 +70,7 @@ router.post(
 
 router.post(
   "/login",
-  checkUsernameFree,
-  checkUsernameExists,
-  checkPasswordLength,
+    checkUsernameExists,
   async (req, res, next) => {
     try {
       const { username, password } = req.body;

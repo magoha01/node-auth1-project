@@ -1,19 +1,19 @@
-const path = require("path");
 const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
 const session = require("express-session");
 
 const usersRouter = require("./users/users-router");
 const authRouter = require("./auth/auth-router");
-
-const helmet = require("helmet");
-const cors = require("cors");
-
 
 const server = express();
 
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
+
+server.use("/api/users", usersRouter);
+server.use("/api/auth", authRouter);
 
 server.use(
   session({
@@ -24,14 +24,11 @@ server.use(
       secure: false, //in prod it should be true (only over https)
       httpOnly: false, //make it true if possible(js cant read cookie)
     },
-   // rolling: true, //push back teh expiration date of cookie
+    // rolling: true, //push back teh expiration date of cookie
     resave: false, //ignore for now
     saveUninitialized: false, //if false, sessions are not stored "by default"
   })
 );
-
-server.use("/api/users", usersRouter);
-server.use("/api/auth", authRouter);
 
 server.get("/", (req, res) => {
   res.json({ api: "up" });

@@ -8,11 +8,12 @@ const Users = require("../users/users-model");
   }
 */
 function restricted(req, res, next) {
-  if (req.session.user) {
-    next();
-  } else {
-    next({ status: 401, message: "You shall not pass!" });
-  }
+  // if (req.session.user) {
+  //   next();
+  // } else {
+  //   next({ status: 401, message: "You shall not pass!" });
+  // }
+  console.log(RESTRICTED)
 }
 
 /*
@@ -23,14 +24,16 @@ function restricted(req, res, next) {
     "message": "Username taken"
   }
 */
-function checkUsernameFree(req, res, next) {
-  if (Users.findBy({ username: req.user.username }).first() != null) {
-    next({
-      status: 400,
-      message: "Username taken",
-    });
-  } else {
-    next();
+async function checkUsernameFree(req, res, next) {
+  try {
+    const users = Users.findBy({username: req.body.username})
+    if (!users.length){
+      next()
+    } else {
+      next({ status: 422, message: "Username taken"})
+    }
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -39,19 +42,19 @@ function checkUsernameFree(req, res, next) {
 
   status 401
   {
-    "message": "Invalid credentials"
+    " status: 401, message": "Invalid credentials"
   }
 */
 async function checkUsernameExists(req, res, next) {
-  const user = await Users.findBy({ username: req.user.username }).first();
-  if (user == null) {
-    next({
-      status: 400,
-      message: `user '${req.user.username}' does not exist!`,
-    });
-  } else {
-    req.user = user;
-    next();
+  try {
+    const users = Users.findBy({username: req.body.username})
+    if (!users.length){
+      next()
+    } else {
+      next({ status: 401, message: "Invalid credentials"})
+    }
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -65,12 +68,9 @@ async function checkUsernameExists(req, res, next) {
 */
 
 function checkPasswordLength(req, res, next) {
-  if (!req.body.password || req.body.password.trim().length < 3) {
-    next({ status: 400, message: "Password must be longer than 3 chars" });
+  if (!req.body.password || req.body.password.length <= 3) {
+    next({ status: 422, message: "Password must be longer than 3 chars" });
   } else {
-    req.user = {
-      password: req.body.password.trim(),
-    };
     next();
   }
 }
