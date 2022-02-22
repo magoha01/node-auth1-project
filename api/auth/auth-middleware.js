@@ -8,12 +8,11 @@ const Users = require("../users/users-model");
   }
 */
 function restricted(req, res, next) {
-  // if (req.session.user) {
-  //   next();
-  // } else {
-  //   next({ status: 401, message: "You shall not pass!" });
-  // }
-  console.log(RESTRICTED)
+  if (req.session.user) {
+    next();
+  } else {
+    next({ status: 401, message: "You shall not pass!" });
+  }
 }
 
 /*
@@ -26,11 +25,12 @@ function restricted(req, res, next) {
 */
 async function checkUsernameFree(req, res, next) {
   try {
-    const users = Users.findBy({username: req.body.username})
-    if (!users.length){
-      next()
+    const users = Users.findBy({ username: req.body.username }).first();
+    console.log(users)
+    if (users.length) {
+      next({ status: 422, message: "Username taken" });
     } else {
-      next({ status: 422, message: "Username taken"})
+      next();
     }
   } catch (err) {
     next(err);
@@ -47,11 +47,11 @@ async function checkUsernameFree(req, res, next) {
 */
 async function checkUsernameExists(req, res, next) {
   try {
-    const users = Users.findBy({username: req.body.username})
-    if (!users.length){
-      next()
+    const users = Users.findBy({ username: req.body.username });
+    if (!users.length) {
+      next();
     } else {
-      next({ status: 401, message: "Invalid credentials"})
+      next({ status: 401, message: "Invalid credentials" });
     }
   } catch (err) {
     next(err);

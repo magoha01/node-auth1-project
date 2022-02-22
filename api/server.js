@@ -2,11 +2,37 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const session = require("express-session");
-
 const usersRouter = require("./users/users-router");
 const authRouter = require("./auth/auth-router");
+const Store = require("connect-session-knex")(session);
+const knex = require("../data/db-config");
 
 const server = express();
+
+server.use(
+  session({
+    name: "chocolatechip", //name of session id
+    secret: "make it long and random", // encrypted
+    saveUninitialized: false,
+    resave: false,
+    store: new Store({
+      knex,
+      createTable: true,
+      clearInterval: 1000 * 60 * 10,
+      tablename: "sessions",
+      sidfieldname: "sid",
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60,
+      secure: false, //in prod it should be true (only over https)
+      httpOnly: true, //make it true if possible(js cant read cookie)
+      //sameSite: 'none'
+    },
+    // rolling: true, //push back teh expiration date of cookie
+    //ignore for now
+    //if false, sessions are not stored "by default"
+  })
+);
 
 server.use(helmet());
 server.use(express.json());
@@ -14,21 +40,6 @@ server.use(cors());
 
 server.use("/api/users", usersRouter);
 server.use("/api/auth", authRouter);
-
-server.use(
-  session({
-    name: "chocolatechip", //name of session id
-    secret: "make it long and random", // encrypted
-    cookie: {
-      maxAge: 1000 * 60 * 60,
-      secure: false, //in prod it should be true (only over https)
-      httpOnly: false, //make it true if possible(js cant read cookie)
-    },
-    // rolling: true, //push back teh expiration date of cookie
-    resave: false, //ignore for now
-    saveUninitialized: false, //if false, sessions are not stored "by default"
-  })
-);
 
 server.get("/", (req, res) => {
   res.json({ api: "up" });

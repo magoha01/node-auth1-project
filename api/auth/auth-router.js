@@ -3,12 +3,11 @@
 
 const router = require("express").Router();
 const bcrypt = require("bcryptjs");
-const { add, findBy } = require("../users/users-model");
+const Users = require("../users/users-model");
 const {
   checkUsernameFree,
-  checkUsernameExists, 
+  checkUsernameExists,
   checkPasswordLength,
-  restricted
 } = require("../auth/auth-middleware");
 
 /**
@@ -42,9 +41,7 @@ router.post(
     try {
       const { username, password } = req.body;
       const hash = bcrypt.hashSync(password, 8);
-      const user = { username, password: hash };
-      const createdUser = await add(user);
-      res.json(createdUser);
+      const createdUser = await Users.add({ username, password: hash });
       res.status(201).json(createdUser);
     } catch (err) {
       next(err);
@@ -68,30 +65,26 @@ router.post(
   }
  */
 
-router.post(
-  "/login",
-    checkUsernameExists,
-  async (req, res, next) => {
-    try {
-      const { username, password } = req.body;
+router.post("/login", checkUsernameExists, async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
 
-      const [user] = await findBy({ username });
+    const [user] = await Users.findBy({ username });
 
-      if (user && bcrypt.compareSync(password, user.password)) {
-        console.log(user);
-        console.log(req.session);
-        req.session.user = user;
-        //a cookie will be set on the response containing a sessionId
-        //the session will be stored with a sessionId matching that of the cookie
-        res.json({ message: `welcome ${username}` });
-      } else {
-        next({ status: 401, message: "bad credentials" });
-      }
-    } catch (err) {
-      next(err);
+    if (user && bcrypt.compareSync(password, user.password)) {
+      console.log(user);
+      console.log(req.session);
+      req.session.user = user;
+      //a cookie will be set on the response containing a sessionId
+      //the session will be stored with a sessionId matching that of the cookie
+      res.json({ message: `welcome ${username}` });
+    } else {
+      next({ status: 401, message: "Invalid Credentials" });
     }
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 /**
   3 [GET] /api/auth/logout
@@ -113,13 +106,13 @@ router.get("/logout", async (req, res, next) => {
   if (req.session.user) {
     req.session.destroy((err) => {
       if (err) {
-        res.json({ message: "trapped" });
+        res.json({ message: "problem logging out" });
       } else {
-        res.json({ message: "goodbye" });
+        res.json({ message: "logged out" });
       }
     });
   } else {
-    res.json({ message: "stranger danger" });
+    res.json({ message: "no session" });
   }
 });
 
